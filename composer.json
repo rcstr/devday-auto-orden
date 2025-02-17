@@ -10,6 +10,7 @@
 			"DevDay\\AutoOrden\\": "includes/"
 		},
 		"files": [
+			"includes/functions.php"
 		]
 	}
 }
