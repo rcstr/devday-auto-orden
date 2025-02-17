@@ -1,0 +1,15 @@
+{
+	"name": "devday/auto-orden",
+	"description": "WooCommerce Auto Orden",
+	"type": "wordpress-plugin",
+	"require": {
+		"php": ">=7.4.0"
+	},
+	"autoload": {
+		"psr-4": {
+			"Devday\\AutoOrden\\": "includes/"
+		},
+		"files": [
+		]
+	}
+}

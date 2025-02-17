@@ -4,3 +4,5 @@
  */
 
 namespace DevDay\AutoOrden;
+
+defined( 'ABSPATH' ) || exit;
