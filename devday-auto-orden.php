@@ -9,8 +9,10 @@ namespace DevDay\AutoOrden;
 defined( 'ABSPATH' ) || exit;
 
 define( 'DEVDAY_AUTO_ORDEN_VERSION', '1.0.0' );
-define( 'DEVDAY_AUTO_ORDER_ORDER_META_KEY', 'devday/auto_order' );
+define( 'DEVDAY_AUTO_ORDER_ORDER_NAMESPACE', 'devday/auto_order' );
 define( 'DEVDAY_AUTO_ORDEN_SLUG', 'devday-auto-orden' );
+define('DEVDAY_AUTO_ORDER_MIDNIGHT_CRON_HOOK', 'devday/auto_order/midnight');
+define('DEVDAY_AUTO_ORDER_SINGLE_CRON_HOOK', 'devday/auto_order/single');
 
 require_once __DIR__ . '/vendor/autoload.php';
 
