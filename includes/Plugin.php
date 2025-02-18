@@ -43,12 +43,7 @@ class Plugin {
 
 	public function schedule_midnight_check() {
 		if ( false === as_has_scheduled_action( DEVDAY_AUTO_ORDER_MIDNIGHT_CRON_HOOK, array(), DEVDAY_AUTO_ORDER_ORDER_NAMESPACE ) ) {
-			as_schedule_recurring_action(
-				strtotime( 'tomorrow 1am' ),
-				DAY_IN_SECONDS,
-				DEVDAY_AUTO_ORDER_MIDNIGHT_CRON_HOOK,
-				array(),
-				DEVDAY_AUTO_ORDER_ORDER_NAMESPACE
+			as_schedule_recurring_action( strtotime( 'tomorrow 1am' ), DAY_IN_SECONDS, DEVDAY_AUTO_ORDER_MIDNIGHT_CRON_HOOK, array(), DEVDAY_AUTO_ORDER_ORDER_NAMESPACE
 			);
 		}
 	}
@@ -57,9 +52,9 @@ class Plugin {
 		$order_ids = wc_get_orders(
 			array(
 				//'date_paid' => '<=' . strtotime( '-1 day' ),
-				'meta_key'     => DEVDAY_AUTO_ORDEN_META_KEY,
-				'meta_value'   => 1,
-				'return'       => 'ids',
+				'meta_key'   => DEVDAY_AUTO_ORDEN_META_KEY,
+				'meta_value' => 1,
+				'return'     => 'ids',
 			)
 		);
 
@@ -68,13 +63,41 @@ class Plugin {
 		}
 	}
 
-	private static function schedule_auto_order( int $order_id ) {
+	private static function schedule_auto_order( int $order_id ): void {
 		if ( ! as_has_scheduled_action( DEVDAY_AUTO_ORDER_SINGLE_CRON_HOOK, array( $order_id ), DEVDAY_AUTO_ORDER_ORDER_NAMESPACE ) ) {
 			as_enqueue_async_action( DEVDAY_AUTO_ORDER_SINGLE_CRON_HOOK, array( $order_id ), DEVDAY_AUTO_ORDER_ORDER_NAMESPACE );
 		}
 	}
 
-	public function process_auto_orden( int $order_id ): bool {
-		return true;
+	public function process_auto_orden( int $order_id ): void {
+		$order = wc_get_order( $order_id );
+
+		if ( ! $order ) {
+			throw new \Exception( 'Order not found' );
+		}
+
+		$new_order = wc_create_order(
+			array(
+				'status'        => 'pending',
+				'customer_id'   => $order->get_customer_id(),
+				'created_via'   => DEVDAY_AUTO_ORDER_ORDER_NAMESPACE,
+				'customer_note' => $order->get_customer_note(),
+
+			)
+		);
+
+		foreach ( $order->get_items() as $item ) {
+			$new_order->add_product( $item->get_product(), $item->get_quantity() );
+		}
+
+		$new_order->calculate_totals();
+		$new_order->set_payment_method( $order->get_payment_method() );
+
+		if ( 0 === (int) $new_order->get_total() ) {
+			$new_order->payment_complete();
+		}
+
+		$available_gateways = WC()->payment_gateways->get_available_payment_gateways();
+		$available_gateways[ $order->get_payment_method() ]->process_payment( $new_order->get_id() );
 	}
 }
