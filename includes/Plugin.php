@@ -71,7 +71,6 @@ class Plugin {
 
 	public function process_auto_orden( int $order_id ): void {
 		$order = wc_get_order( $order_id );
-
 		if ( ! $order ) {
 			throw new \Exception( 'Order not found' );
 		}
@@ -89,15 +88,23 @@ class Plugin {
 		foreach ( $order->get_items() as $item ) {
 			$new_order->add_product( $item->get_product(), $item->get_quantity() );
 		}
-
 		$new_order->calculate_totals();
-		$new_order->set_payment_method( $order->get_payment_method() );
-
-		if ( 0 === (int) $new_order->get_total() ) {
-			$new_order->payment_complete();
-		}
 
 		$available_gateways = WC()->payment_gateways->get_available_payment_gateways();
+
+		// @todo assign payment method to new order
+		if ( empty( $order->get_payment_method() ) || ! isset( $available_gateways[ $order->get_payment_method() ] ) ) {
+			$new_order->payment_complete();
+			return;
+		}
+
+		$new_order->set_payment_method( $available_gateways[ $order->get_payment_method() ] );
+		if ( 0 === (int) $new_order->get_total() ) {
+			$new_order->payment_complete();
+
+			return;
+		}
+
 		$available_gateways[ $order->get_payment_method() ]->process_payment( $new_order->get_id() );
 	}
 }
