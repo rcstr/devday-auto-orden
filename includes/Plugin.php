@@ -81,9 +81,15 @@ class Plugin {
 				'customer_id'   => $order->get_customer_id(),
 				'created_via'   => DEVDAY_AUTO_ORDER_ORDER_NAMESPACE,
 				'customer_note' => $order->get_customer_note(),
-
 			)
 		);
+
+		$new_order->add_order_note(
+			sprintf(
+				__( 'Auto Orden creada a partir de la orden <a href="%s">#%d</a>', DEVDAY_AUTO_ORDEN_SLUG ),
+				$order->get_edit_order_url(),
+				$order_id
+			) );
 
 		foreach ( $order->get_items() as $item ) {
 			$new_order->add_product( $item->get_product(), $item->get_quantity() );
@@ -95,6 +101,7 @@ class Plugin {
 		// @todo assign payment method to new order
 		if ( empty( $order->get_payment_method() ) || ! isset( $available_gateways[ $order->get_payment_method() ] ) ) {
 			$new_order->payment_complete();
+
 			return;
 		}
 
