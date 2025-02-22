@@ -15,3 +15,8 @@ function is_auto_order( \WC_Order $order ): bool {
 		return false;
 	}
 }
+
+function cancel_auto_order( \WC_Order $order ) {
+	$order->update_meta_data( DEVDAY_AUTO_ORDEN_META_KEY, 0 );
+	$order->save();
+}

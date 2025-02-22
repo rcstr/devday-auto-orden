@@ -29,7 +29,9 @@ class Plugin {
 		add_action( 'init', array( $this, 'register_auto_orders_endpoint' ) );
 		add_filter( 'woocommerce_get_query_vars', array( $this, 'add_auto_orders_query_vars' ) );
 		add_action( 'woocommerce_account_auto-orders_endpoint', array( $this, 'auto_orders_endpoint_content' ) );
+
 		add_filter( 'woocommerce_my_account_my_orders_actions', array( $this, 'add_cancel_auto_order_button' ), 10, 2 );
+		add_action( 'woocommerce_account_cancel-auto-order_endpoint', array( $this, 'cancel_auto_order_endpoint_content' ) );
 	}
 
 	public function add_auto_orden_checkout() {
@@ -127,10 +129,13 @@ class Plugin {
 
 	public function register_auto_orders_endpoint() {
 		add_rewrite_endpoint( 'auto-orders', EP_ROOT | EP_PAGES );
+//		add_rewrite_endpoint( 'cancel-auto-order' );
 	}
 
 	public function add_auto_orders_query_vars( array $vars ) {
 		$vars[] = 'auto-orders';
+		$vars[] = 'cancel-auto-order';
+
 
 		return $vars;
 	}
@@ -158,5 +163,29 @@ class Plugin {
 			'',
 			DEVDAY_AUTO_ORDEN_TEMPLATES_PATH
 		);
+	}
+
+	public function add_cancel_auto_order_button( array $actions, \WC_Order $order ) {
+		if ( is_auto_order( $order ) ) {
+			$actions['cancel_auto_order'] = array(
+				'url' => wc_get_endpoint_url( 'cancel-auto-order', $order->get_id(), wc_get_page_permalink( 'myaccount' ) ),
+				'name' => __( 'Cancelar Auto Orden', DEVDAY_AUTO_ORDEN_SLUG ),
+			);
+		}
+
+		return $actions;
+	}
+
+	function cancel_auto_order_endpoint_content( $order_id ) {
+		$order = wc_get_order( $order_id );
+		if ( ! $order && ! is_auto_order( $order ) ) {
+			wc_print_notice( __( 'No se puede cancelar esta orden', DEVDAY_AUTO_ORDEN_SLUG ), 'warning' );
+		} else {
+			cancel_auto_order( $order );
+			wc_print_notice( __( 'Auto Orden cancelada', DEVDAY_AUTO_ORDEN_SLUG ), 'success' );
+		}
+
+		$current_page = empty( $current_page ) ? 1 : absint( $current_page );
+		$this->auto_orders_endpoint_content( $current_page );
 	}
 }
