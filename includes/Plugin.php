@@ -32,6 +32,7 @@ class Plugin {
 
 		add_filter( 'woocommerce_my_account_my_orders_actions', array( $this, 'add_cancel_auto_order_button' ), 10, 2 );
 		add_action( 'woocommerce_account_cancel-auto-order_endpoint', array( $this, 'cancel_auto_order_endpoint_content' ) );
+		add_filter( 'user_has_cap', array( $this, 'add_cancel_auto_order_cap' ), 10, 3 );
 	}
 
 	public function add_auto_orden_checkout() {
@@ -176,16 +177,30 @@ class Plugin {
 		return $actions;
 	}
 
-	function cancel_auto_order_endpoint_content( $order_id ) {
+	public function cancel_auto_order_endpoint_content( $order_id ) {
 		$order = wc_get_order( $order_id );
-		if ( ! $order && ! is_auto_order( $order ) ) {
-			wc_print_notice( __( 'No se puede cancelar esta orden', DEVDAY_AUTO_ORDEN_SLUG ), 'warning' );
+		if ( ! $order || ! is_auto_order( $order ) ) {
+			wc_print_notice( __( 'No se puede cancelar esta orden', DEVDAY_AUTO_ORDEN_SLUG ), 'error' );
+		} elseif ( ! current_user_can( 'view_order', $order_id ) ) {
+			wc_print_notice( __( 'No tienes permisos para cancelar esta orden', DEVDAY_AUTO_ORDEN_SLUG ), 'error' );
 		} else {
 			cancel_auto_order( $order );
-			wc_print_notice( __( 'Auto Orden cancelada', DEVDAY_AUTO_ORDEN_SLUG ), 'success' );
+			wc_print_notice( __( 'Auto Orden cancelada', DEVDAY_AUTO_ORDEN_SLUG ) );
 		}
 
-		$current_page = empty( $current_page ) ? 1 : absint( $current_page );
-		$this->auto_orders_endpoint_content( $current_page );
+		$this->auto_orders_endpoint_content( 1 );
+	}
+
+	public function add_cancel_auto_order_cap( $allcaps, $cap, $args ) {
+		if ( 'cancel_auto_orden' === $cap ) {
+			$order = wc_get_order( $args[0] );
+			if ( ! $order ) {
+				return $allcaps;
+			}
+
+			$allcaps[ $cap ] = is_auto_order( $order );
+		}
+
+		return $allcaps;
 	}
 }
